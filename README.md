@@ -35,7 +35,7 @@ your repo access and to practice PR'ing with your team _before_ you start
 coding!
 
 - Jair Oliveira: [GitHub](https://github.com/ceifeirocv) / [LinkedIn](https://www.linkedin.com/in/jair-oliveira-77276b153/)
-- Teammate name #2: [GitHub](https://github.com/ghaccountname) / [LinkedIn](https://linkedin.com/in/liaccountname)
+- Donat Otvos #2: [GitHub](https://github.com/DonatOtvosDev)
 
   ...
 

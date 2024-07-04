@@ -34,3 +34,10 @@
 # typescript
 **/*.tsbuildinfo
 **/next-env.d.ts
+
+
+# fastapi server
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
