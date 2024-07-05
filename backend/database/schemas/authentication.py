@@ -6,26 +6,26 @@ class UserBase(BaseModel):
     email : str
 
 class User(UserBase):
-    """Basic user modell sterilized of secrets"""
+    """Basic user model sterilized of secrets"""
     id : int
 
 class LoginUser(BaseModel):
-    """User modell for login"""
+    """User model for login"""
     username : str
     password : str
 
 class RegisterUser(UserBase):
-    """User modell for regitering"""
+    """User model for regitering"""
     password : str
 class CreateUser(RegisterUser):
     salt : str
     
 
 class Token(BaseModel):
-    """"Token modell"""
+    """"Token model"""
     access_token : str
     token_type : str
 
 class TokenReturn(Token):
-    """Token modell containing expiry"""
+    """Token model containing expiry"""
     expiry : datetime
