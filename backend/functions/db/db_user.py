@@ -17,7 +17,8 @@ def create_user(db : Session, user : CreateUser) -> UserModel:
     return db_user
 
 def delete_user(db : Session, id:int):
-    db.query(UserModel)
+    db.query(UserModel).filter(UserModel.id == id).delete()
+    db.commit()
 
 def get_user_by_username(db : Session, username : str) -> UserModel:
     return db.query(UserModel).filter(UserModel.username == username).first()

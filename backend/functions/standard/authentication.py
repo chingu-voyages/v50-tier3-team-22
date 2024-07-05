@@ -10,11 +10,12 @@ from os import getenv
 from bcrypt import gensalt
 from passlib.context import CryptContext
 from database.schemas.authentication import User, LoginUser, TokenReturn, RegisterUser
-from database.modells.user import User as DbUser
+from database.models.user import User as DbUser
 
-from functions.db.db_user import create_user, get_user_by_id, get_user_by_username, get_user_by_email
+from functions.db.db_user import create_user, delete_user, get_user_by_username, get_user_by_email
 
 CREDENTIAL_EXEPTION = HTTPException(status_code=401, detail="Could not validate the credential")
+INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password",headers={"WWW-Authenticate": "Bearer"},)
 
 SECRET_KEY = getenv("SECRET_KEY")
 ALGORITHM = "HS256"
@@ -28,62 +29,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 def verify_password(password:str, salt:str, hashed_password:str):
     return pwd_context.verify(password + salt, hashed_password)
 
-#User functions
-def make_new_user(data:RegisterUser, db_session : Session):
-    user = DbUser(
-        username = data.username,
-        email = data.email
-    )
-    
-
-    #Validate the user input to make sure the data is correct
-    
-    if get_user_by_username(db=db_session, username=user.username) != None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, 
-            detail = "Username is already taken"
-        )
-    elif get_user_by_email(db=db_session, email=user.email):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, 
-            detail = "This email is already used"
-        )
-
-    #Checking the data base for conflicts
-
-    user.salt = str(gensalt())
-    user.password = pwd_context.hash(data.password + user.salt)
-
-    #Generating salt and hashing pw
-    
-    user = create_user(db=db_session,user=user)
-    
-    #Adding the user to the database
-
-    user_out = User(
-        id=user.id,
-        username=user.username,
-        email=user.email
-    )
-  
-    #Formulate response
-    return user_out
-
-
 def login_for_access(db_session:Session, data:LoginUser):
-    incorrect_login = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
     user = get_user_by_username(db=db_session,username=data.username)
     if user == None:
-        raise incorrect_login
+        raise INCORRECT_LOGIN_EXEPTION
     #check if user exists and retrieve user
 
     if not verify_password(password=data.password, salt=user.salt, hashed_password=user.password):
-        raise incorrect_login
+        raise INCORRECT_LOGIN_EXEPTION
     
     #verify password
 
@@ -130,3 +83,62 @@ def authenticate(db_session:Session = Depends(get_db), token: str = Depends(oaut
 
     #return the user
     return user_out
+
+
+#User functions
+def make_new_user(data:RegisterUser, db_session : Session):
+    user = DbUser(
+        username = data.username,
+        email = data.email
+    )
+    
+
+    #Validate the user input to make sure the data is correct
+    
+    if get_user_by_username(db=db_session, username=user.username) != None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail = "Username is already taken"
+        )
+    elif get_user_by_email(db=db_session, email=user.email):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail = "This email is already used"
+        )
+
+    #Checking the data base for conflicts
+
+    user.salt = str(gensalt())
+    user.password = pwd_context.hash(data.password + user.salt)
+
+    #Generating salt and hashing pw
+    
+    user = create_user(db=db_session,user=user)
+    
+    #Adding the user to the database
+
+    user_out = User(
+        id=user.id,
+        username=user.username,
+        email=user.email
+    )
+  
+    #Formulate response
+    return user_out
+
+def remove_user(db_session:Session, user:User, data:LoginUser):
+    
+    #Validate login data
+
+    user = get_user_by_username(db=db_session, username=data.username)
+
+    if user == None:
+        raise INCORRECT_LOGIN_EXEPTION
+    elif not verify_password(data.password, user.salt, user.password):
+        raise INCORRECT_LOGIN_EXEPTION
+    #Double authenticate
+
+    delete_user(db=db_session,id=user.id)
+    #remove user
+    return
+    #return
