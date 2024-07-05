@@ -5,3 +5,5 @@ SQLAlchemy==2.0.31
 psycopg2==2.9.9
 PyJWT==2.8.0
 passlib[bcrypt]
+bcrypt==4.0.1
+python-multipart==0.0.9

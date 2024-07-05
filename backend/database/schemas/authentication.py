@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+from datetime import datetime
 class UserBase(BaseModel):
     """Class with the basic info needed for all user shemas"""
     username : str
@@ -9,17 +9,17 @@ class User(UserBase):
     """Basic user modell sterilized of secrets"""
     id : int
 
-class LoginUser(UserBase):
-    """User modell for login/register the user"""
+class LoginUser(BaseModel):
+    """User modell for login"""
+    username : str
     password : str
 
-class CreateUser(LoginUser):
+class RegisterUser(UserBase):
+    """User modell for regitering"""
+    password : str
+class CreateUser(RegisterUser):
     salt : str
-
-class UserAuth(LoginUser):
-    """All necessary information for authentication"""
-    id : str
-    salt : str
+    
 
 class Token(BaseModel):
     """"Token modell"""
@@ -28,4 +28,4 @@ class Token(BaseModel):
 
 class TokenReturn(Token):
     """Token modell containing expiry"""
-    expiry_min : int
+    expiry : datetime
