@@ -6,11 +6,25 @@ Fork the represitory from github and enter the parent directory
 ```bash
 pip install -r requirements.txt
 ```
-2 Run the project in developement mode
+
+2 Set environmental variables
+Database url:
+```bash
+setx DATABASE_URL user:yourpassword@database_url:port/dbname
+```
+Secret key for JWT token generation (use gitbash)
+```bash
+openssl rand -hex 32
+```
+Save the generated secret key
+```bash
+setx SECRET_KEY your secret key here
+```
+3 Run the project in developement mode
 ```bash
 fastapi dev main.py
 ```
-3 Fast API's built in documetnation can be accessed at the root of the API
+4 Fast API's built in documetnation can be accessed at the root of the API
 
 ## Usage
 - **/token:** Login for JWTTokent
