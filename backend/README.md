@@ -13,6 +13,6 @@ fastapi dev main.py
 3 Fast API's built in documetnation can be accessed at the root of the API
 
 ## Usage
-**/token:** Login for JWTTokent
-**/register:** Register new user to the database for future login
-**/deleteuser:** Delete the user data of the token owner with the username and password
+- **/token:** Login for JWTTokent
+- **/register:** Register new user to the database for future login
+- **/deleteuser:** Delete the user data of the token owner with the username and password
