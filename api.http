@@ -1,0 +1,8 @@
+POST https://v50-tier3-team-22.onrender.com/auth HTTP/1.1
+content-type: application/json
+
+{
+    "username": "jair",
+    "email": "boss9@example.com",
+    "password": "password"
+}
