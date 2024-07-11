@@ -10,4 +10,4 @@ class User(Base):
     password = Column(String)
     salt = Column(String)
     email = Column(String, unique=True)
-    recipes = relationship("recipe", back_populates="user")
+    recipes = relationship("Recipe", back_populates="owner")

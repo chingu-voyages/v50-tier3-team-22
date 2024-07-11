@@ -11,4 +11,4 @@ class Recipe(Base):
     guide = Column(String)
     owner_id = Column(Integer, ForeignKey("users.id"))
 
-    owner = relationship("user", back_populates="recipes")
+    owner = relationship("User", back_populates="recipes")
