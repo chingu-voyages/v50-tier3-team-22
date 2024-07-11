@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database.database_services import get_db
 
+import re
 import jwt
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, UTC
@@ -30,6 +31,13 @@ def verify_password(password:str, salt:str, hashed_password:str):
     return pwd_context.verify(password + salt, hashed_password)
 
 def login_for_access(db_session:Session, data:LoginUser):
+    if len(re.findall(pattern="[^a-z0-9]", string=data.username)) > 0 or len(data.username) < 4:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Username is not acceptable")
+    
+    if len(data.password) < 6:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
+    #validate input
+
     user = get_user_by_username(db=db_session,username=data.username)
     if user == None:
         raise INCORRECT_LOGIN_EXEPTION
@@ -87,14 +95,22 @@ def authenticate(db_session:Session = Depends(get_db), token: str = Depends(oaut
 
 #User functions
 def make_new_user(data:RegisterUser, db_session : Session):
+    if len(re.findall(pattern="[^a-z0-9]", string=data.username)) > 0 or len(data.username) < 4:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Username is not acceptable")
+    
+    if re.fullmatch(pattern="[a-z0-9/.]+@[a-z0-9/]+\.[a-z]+", string=data.email) == None:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email address")
+    
+    if len(data.password) < 6:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
+
+    #Validate the user input to make sure the data is correct
     user = DbUser(
         username = data.username,
         email = data.email
     )
-    
 
-    #Validate the user input to make sure the data is correct
-    
+
     if get_user_by_username(db=db_session, username=user.username) != None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, 
@@ -127,7 +143,13 @@ def make_new_user(data:RegisterUser, db_session : Session):
     return user_out
 
 def remove_user(db_session:Session, user:User, data:LoginUser):
+    if len(re.findall(pattern="[^a-z0-9]", string=data.username)) > 0 or len(data.username) < 4:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Username is not acceptable")
     
+    if len(data.password) < 6:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
+
+
     #Validate login data
 
     user = get_user_by_username(db=db_session, username=data.username)
