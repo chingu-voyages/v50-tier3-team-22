@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 class UserBase(BaseModel):
     """Class with the basic info needed for all user shemas"""
-    username : str
+    name : str
     email : str
 
 class User(UserBase):
@@ -11,7 +11,7 @@ class User(UserBase):
 
 class LoginUser(BaseModel):
     """User model for login"""
-    username : str
+    email : str
     password : str
 
 class RegisterUser(UserBase):

@@ -1,5 +1,5 @@
-from fastapi import HTTPException, Depends, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException, Depends, status, Security
+from fastapi.security.api_key import APIKeyHeader
 from sqlalchemy.orm import Session
 from database.database_services import get_db
 
@@ -12,7 +12,7 @@ from passlib.context import CryptContext
 from database.schemas.authentication import User, LoginUser, TokenReturn, RegisterUser
 from database.models.user import User as DbUser
 
-from functions.db.db_user import create_user, delete_user, get_user_by_username, get_user_by_email
+from functions.db.db_user import create_user, delete_user, get_user_by_email
 
 CREDENTIAL_EXEPTION = HTTPException(status_code=401, detail="Could not validate the credential")
 INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password",headers={"WWW-Authenticate": "Bearer"},)
@@ -21,16 +21,16 @@ SECRET_KEY = getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+token_key = APIKeyHeader(name="Authorization")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 #Token and verification functions
 def verify_password(password:str, salt:str, hashed_password:str):
     return pwd_context.verify(password + salt, hashed_password)
 
 def login_for_access(db_session:Session, data:LoginUser):
-    user = get_user_by_username(db=db_session,username=data.username)
+    user = get_user_by_email(db=db_session, email=data.email)
     if user == None:
         raise INCORRECT_LOGIN_EXEPTION
     #check if user exists and retrieve user
@@ -41,7 +41,7 @@ def login_for_access(db_session:Session, data:LoginUser):
     #verify password
 
     expires = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    token_data = {"sub" : user.username, "expires" : expires.isoformat()}
+    token_data = {"sub" : user.email, "expires" : expires.isoformat()}
 
     #generate expiration time and sub for ecnoding
 
@@ -52,23 +52,29 @@ def login_for_access(db_session:Session, data:LoginUser):
     return TokenReturn(access_token=access_token, token_type="bearer", expiry=expires)
 
 
-def authenticate(db_session:Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(token_key)):
+    print(auth_key)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-
+    auth = auth_key.split(" ")
+    token_type = auth[0]
+    if token_type != "Bearer":
+        raise credentials_exception
+    
+    token = auth[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         expires : datetime = datetime.fromisoformat(payload.get("expires"))
-        username : str = payload.get("sub")
+        email : str = payload.get("sub")
     except InvalidTokenError:
         raise credentials_exception
     #verify token 
-    if username is None:
+    if email is None:
         raise credentials_exception
-    user = get_user_by_username(db=db_session,username=username)
+    user = get_user_by_email(db=db_session, email=email)
 
     if user == None:
         raise credentials_exception
@@ -77,7 +83,7 @@ def authenticate(db_session:Session = Depends(get_db), token: str = Depends(oaut
     #check if sub info is valid and if expired
     user_out = User(
         id=user.id,
-        username=user.username,
+        name=user.name,
         email=user.email
     )
 
@@ -88,19 +94,14 @@ def authenticate(db_session:Session = Depends(get_db), token: str = Depends(oaut
 #User functions
 def make_new_user(data:RegisterUser, db_session : Session):
     user = DbUser(
-        username = data.username,
+        name = data.name,
         email = data.email
     )
     
 
     #Validate the user input to make sure the data is correct
     
-    if get_user_by_username(db=db_session, username=user.username) != None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, 
-            detail = "Username is already taken"
-        )
-    elif get_user_by_email(db=db_session, email=user.email):
+    if get_user_by_email(db=db_session, email=user.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, 
             detail = "This email is already used"
@@ -119,7 +120,7 @@ def make_new_user(data:RegisterUser, db_session : Session):
 
     user_out = User(
         id=user.id,
-        username=user.username,
+        name=user.name,
         email=user.email
     )
   
@@ -130,7 +131,7 @@ def remove_user(db_session:Session, user:User, data:LoginUser):
     
     #Validate login data
 
-    user = get_user_by_username(db=db_session, username=data.username)
+    user = get_user_by_email(db=db_session, email=data.email)
 
     if user == None:
         raise INCORRECT_LOGIN_EXEPTION
