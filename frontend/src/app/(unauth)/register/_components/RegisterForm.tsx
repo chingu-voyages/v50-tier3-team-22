@@ -15,12 +15,12 @@ import { registerSchema, UserRegisterType } from "@/lib/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckIcon } from "@radix-ui/react-icons";
 import { useMutation } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
-import { redirect } from "next/navigation";
-import React, { useEffect } from "react";
+import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 export default function RegisterForm() {
+  const router = useRouter();
   const form = useForm<UserRegisterType>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -33,7 +33,7 @@ export default function RegisterForm() {
 
   const mutattion = useMutation({
     mutationFn: (data: UserRegisterType) => {
-      return axios.post("/auth/register", data);
+      return fastApi.post("/register", data);
     },
   });
 
@@ -41,11 +41,17 @@ export default function RegisterForm() {
     try {
       const response = await mutattion.mutateAsync(data);
       if (response?.status === 201) {
-        redirect(`/login?email=${response?.data.email}`);
-      }
+        router.push(`/login?email=${response?.data.email}`);
+      } else form.setError("root", { message: "Something went wrong" });
     } catch (error) {
+      console.log(error);
+
       if (error instanceof AxiosError) {
-        form.setError("root", { message: error.message });
+        if (error.response?.status === 409) {
+          form.setError("root", { message: error.response?.data.detail });
+        } else {
+          form.setError("root", { message: error.message });
+        }
       } else {
         form.setError("root", { message: "Something went wrong" });
       }
@@ -135,7 +141,11 @@ export default function RegisterForm() {
               </FormItem>
             )}
           />
-          <Button type="submit" className="hover:text-primary">
+          <Button
+            type="submit"
+            className="hover:text-primary"
+            disabled={!form.formState.isValid || form.formState.isSubmitting}
+          >
             Signup
           </Button>
         </form>
