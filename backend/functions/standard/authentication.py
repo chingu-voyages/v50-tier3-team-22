@@ -15,7 +15,7 @@ from database.models.user import User as DbUser
 from functions.db.db_user import create_user, delete_user, get_user_by_email
 
 CREDENTIAL_EXEPTION = HTTPException(status_code=401, detail="Could not validate the credential")
-INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password",headers={"WWW-Authenticate": "Bearer"},)
+INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password",headers={"WWW-Authenticate": "Bearer"},)
 
 SECRET_KEY = getenv("SECRET_KEY")
 ALGORITHM = "HS256"
