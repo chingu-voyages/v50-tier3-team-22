@@ -16,6 +16,7 @@ origins = [
     "http://localhost",
     "http://localhost:8080",
     "http://localhost:3000",
+    "https://web-v50-tier3-team-22.onrender.com"
 ]
 
 app.add_middleware(
