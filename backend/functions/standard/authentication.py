@@ -53,7 +53,6 @@ def login_for_access(db_session:Session, data:LoginUser):
 
 
 def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(token_key)):
-    print(auth_key)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
