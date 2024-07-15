@@ -1,5 +1,5 @@
-from fastapi import HTTPException, Depends, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException, Depends, status, Security
+from fastapi.security.api_key import APIKeyHeader
 from sqlalchemy.orm import Session
 from database.database_services import get_db
 
@@ -12,8 +12,9 @@ from bcrypt import gensalt
 from passlib.context import CryptContext
 from database.schemas.authentication import User, LoginUser, TokenReturn, RegisterUser, CreateUser
 
-from functions.db.db_user import create_user, delete_user, get_user_by_username, get_user_by_email
+from functions.db.db_user import create_user, delete_user, get_user_by_email
 from functions.db.db_recipe import delete_recipes
+
 
 CREDENTIAL_EXEPTION = HTTPException(status_code=401, detail="Could not validate the credential")
 INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password",headers={"WWW-Authenticate": "Bearer"},)
@@ -22,9 +23,9 @@ SECRET_KEY = getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+token_key = APIKeyHeader(name="Authorization")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 #Token and verification functions
 def verify_password(password:str, salt:str, hashed_password:str):
@@ -32,15 +33,14 @@ def verify_password(password:str, salt:str, hashed_password:str):
     
 
 def login_for_access(db_session:Session, data:LoginUser):
-    if len(re.findall(pattern="[^a-z0-9]", string=data.username)) > 0 or len(data.username) < 4:
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Username is not acceptable")
+    if re.fullmatch(pattern="[a-z0-9/.]+@[a-z0-9/]+\.[a-z]+", string=data.email) == None:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email address")
     
     if len(data.password) < 6:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
     #validate input
-
-    user = get_user_by_username(db=db_session,username=data.username)
-
+    user = get_user_by_email(db=db_session, email=data.email)
+    
     if user == None:
         raise INCORRECT_LOGIN_EXEPTION
     #check if user exists and retrieve user
@@ -51,7 +51,7 @@ def login_for_access(db_session:Session, data:LoginUser):
     #verify password
 
     expires = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    token_data = {"sub" : user.username, "expires" : expires.isoformat()}
+    token_data = {"sub" : user.email, "expires" : expires.isoformat()}
 
     #generate expiration time and sub for ecnoding
 
@@ -62,29 +62,37 @@ def login_for_access(db_session:Session, data:LoginUser):
     return TokenReturn(access_token=access_token, token_type="bearer", expiry=expires)
 
 
-def authenticate(db_session:Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(token_key)):
+    print(auth_key)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-
+    auth = auth_key.split(" ")
+    token_type = auth[0]
+    if token_type != "Bearer":
+        raise credentials_exception
+    
+    token = auth[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         expires : datetime = datetime.fromisoformat(payload.get("expires"))
-        username : str | None = payload.get("sub")
+        email : str = payload.get("sub")
+
     except InvalidTokenError:
         raise credentials_exception
     #verify token 
-    if username is None:
+    if email is None:
         raise credentials_exception
-    user = get_user_by_username(db=db_session,username=username)
+    user = get_user_by_email(db=db_session, email=email)
 
     if user == None:
         raise credentials_exception
     elif datetime.now(UTC) > expires:
         raise credentials_exception
     #check if sub info is valid and if expired
+
     print(user.recipes)
     user_out = User(**user.__dict__)
 
@@ -94,9 +102,6 @@ def authenticate(db_session:Session = Depends(get_db), token: str = Depends(oaut
 
 #User functions
 def make_new_user(data:RegisterUser, db_session : Session):
-    if len(re.findall(pattern="[^a-z0-9]", string=data.username)) > 0 or len(data.username) < 4:
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Username is not acceptable")
-    
     if re.fullmatch(pattern="[a-z0-9/.]+@[a-z0-9/]+\.[a-z]+", string=data.email) == None:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email address")
     
@@ -106,12 +111,7 @@ def make_new_user(data:RegisterUser, db_session : Session):
     #Validate the user input to make sure the data is correct
     
 
-    if get_user_by_username(db=db_session, username=data.username) != None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, 
-            detail = "Username is already taken"
-        )
-    elif get_user_by_email(db=db_session, email=data.email):
+    if get_user_by_email(db=db_session, email=user.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, 
             detail = "This email is already used"
@@ -132,6 +132,7 @@ def make_new_user(data:RegisterUser, db_session : Session):
     
     user = create_user(db=db_session, user=user)
     #Adding the user to the database
+
     user_out = User(**user.__dict__, recipes=[])
   
     #Formulate response
@@ -147,7 +148,7 @@ def remove_user(db_session:Session, user:User, data:LoginUser):
 
     #Validate login data
 
-    user = get_user_by_username(db=db_session, username=data.username)
+    user = get_user_by_email(db=db_session, email=data.email)
 
     if user == None:
         raise INCORRECT_LOGIN_EXEPTION
