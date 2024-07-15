@@ -5,10 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from database.database_services import start_database
 
 import routers.authentication as authentication
+import routers.recipes as recipes
 
 start_database()
 
 app = FastAPI()
+
 
 origins = [
     "http://localhost.tiangolo.com",
@@ -25,7 +27,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(authentication.router,)
+
+app.include_router(authentication.router)
+app.include_router(recipes.router)
+
 
 @app.get("/")
 def root():
