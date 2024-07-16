@@ -12,12 +12,10 @@ from bcrypt import gensalt
 from passlib.context import CryptContext
 from database.schemas.authentication import User, LoginUser, TokenReturn, RegisterUser, CreateUser
 
-from database.schemas.recipes import Recipe
-from functions.db.db_recipe import get_recipes_by_user
-
 from functions.db.db_user import create_user, delete_user, get_user_by_email
-from functions.db.db_recipe import delete_recipes
+from functions.db.db_recipe import delete_recipes, get_recipes_by_user, update_recipe
 
+from functions.standard.image_manager import delete_image
 
 CREDENTIAL_EXEPTION = HTTPException(status_code=401, detail="Could not validate the credential")
 INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password",headers={"WWW-Authenticate": "Bearer"},)
@@ -80,7 +78,7 @@ def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         expires : datetime = datetime.fromisoformat(payload.get("expires"))
-        email : str = payload.get("sub")
+        email : str | None = payload.get("sub")
 
     except InvalidTokenError:
         raise credentials_exception
@@ -161,6 +159,13 @@ def remove_user(db_session:Session, user:User, data:LoginUser):
         raise INCORRECT_LOGIN_EXEPTION
     #Double authenticate
     
+    recipes = get_recipes_by_user(db=db_session, owner_id=user.id)
+    for recipe in recipes:
+        if recipe.image_name != None:
+            delete_image(recipe.image_name)
+            update_recipe(db=db_session, id=recipe.id, data_to_update={"image_name" : None})
+    #Delete images
+
     delete_recipes(db=db_session, owner_id=user.id)
     delete_user(db=db_session,id=user.id)
     #remove user and recipes
