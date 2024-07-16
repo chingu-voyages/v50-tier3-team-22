@@ -44,8 +44,10 @@ def add_recipe(data : RecipeBase, image : UploadFile | None, user : User, db_ses
         raise VALIDATION_ERROR
     if data.category not in RECIPE_OPTIONS["category"].keys():
         raise VALIDATION_ERROR
-    
-    image_name, image_url = image_upload(image=image)
+    image_name = None
+    image_url = None
+    if image != None:
+        image_name, image_url = image_upload(image=image)
     #image upload
 
     #input validation
