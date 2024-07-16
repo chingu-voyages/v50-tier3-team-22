@@ -12,12 +12,15 @@ from bcrypt import gensalt
 from passlib.context import CryptContext
 from database.schemas.authentication import User, LoginUser, TokenReturn, RegisterUser, CreateUser
 
+from database.schemas.recipes import Recipe
+from functions.db.db_recipe import get_recipes_by_user
+
 from functions.db.db_user import create_user, delete_user, get_user_by_email
 from functions.db.db_recipe import delete_recipes
 
 
 CREDENTIAL_EXEPTION = HTTPException(status_code=401, detail="Could not validate the credential")
-INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password",headers={"WWW-Authenticate": "Bearer"},)
+INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password",headers={"WWW-Authenticate": "Bearer"},)
 
 SECRET_KEY = getenv("SECRET_KEY")
 ALGORITHM = "HS256"
@@ -63,7 +66,6 @@ def login_for_access(db_session:Session, data:LoginUser):
 
 
 def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(token_key)):
-    print(auth_key)
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -93,11 +95,11 @@ def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(
         raise credentials_exception
     #check if sub info is valid and if expired
 
-    print(user.recipes)
-    user_out = User(**user.__dict__)
+    user_out = user.dict()
+    user_out["recipes"] = user.recipes
 
     #return the user
-    return user_out
+    return User(**user_out)
 
 
 #User functions
@@ -105,13 +107,16 @@ def make_new_user(data:RegisterUser, db_session : Session):
     if re.fullmatch(pattern="[a-z0-9/.]+@[a-z0-9/]+\.[a-z]+", string=data.email) == None:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email address")
     
+    if len(re.findall(pattern="[^a-zA-z ]", string=data.name)) > 0 or len(data.name) < 4:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid name provided please do not use special characters")
+    
     if len(data.password) < 6:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
 
     #Validate the user input to make sure the data is correct
     
 
-    if get_user_by_email(db=db_session, email=user.email):
+    if get_user_by_email(db=db_session, email=data.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, 
             detail = "This email is already used"
@@ -121,7 +126,7 @@ def make_new_user(data:RegisterUser, db_session : Session):
     salt = str(gensalt())
     hashed_password = pwd_context.hash(data.password + salt)
     user = CreateUser(
-        username = data.username,
+        name = data.name,
         email = data.email,
         salt = salt,
         password = hashed_password
@@ -133,15 +138,15 @@ def make_new_user(data:RegisterUser, db_session : Session):
     user = create_user(db=db_session, user=user)
     #Adding the user to the database
 
-    user_out = User(**user.__dict__, recipes=[])
+    user_out = User(recipes=[], **user.dict())
   
     #Formulate response
     return user_out
 
 def remove_user(db_session:Session, user:User, data:LoginUser):
-    if len(re.findall(pattern="[^a-z0-9]", string=data.username)) > 0 or len(data.username) < 4:
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Username is not acceptable")
-    
+    if re.fullmatch(pattern="[a-z0-9/.]+@[a-z0-9/]+\.[a-z]+", string=data.email) == None:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email address")
+
     if len(data.password) < 6:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
 

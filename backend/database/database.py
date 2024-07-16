@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import sessionmaker
 from os import getenv
 
@@ -11,4 +11,11 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    def dict(self):
+        """"Generates a dictionary that is not tied to the modell therefore can be freely changed"""
+        dictionary = {}
+        for key, value in self.__dict__.items():
+            dictionary[key] = value
+
+        return dictionary
