@@ -34,7 +34,10 @@ def image_upload(image : UploadFile, image_name : str | None = None):
             use_filename=True, 
             overwrite=True,
             invalidate=True,
-            type = "private"
+            type = "private",
+            transformation=[
+                {'width': 1920, 'height': 1080, 'crop': 'fill'}
+            ]
         )
         expiration_time = datetime.now(UTC) + timedelta(minutes=IMAGE_EXPIRATION_IN_MIN)
         image_url = cloudinary.utils.cloudinary_url(

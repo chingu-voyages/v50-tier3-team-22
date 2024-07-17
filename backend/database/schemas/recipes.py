@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from fastapi import Form
 from typing import Optional
 
+from database.schemas.ingredients import FullIngredient
 class RecipeBase(BaseModel):
     """"The base for other schemas and needed info from the user for creation"""
     name : str
@@ -20,8 +21,11 @@ class RecipeCreate(RecipeBase):
 class Recipe(RecipeBase):
     """Full recipe schema"""
     id : int
+    is_favourite : bool
+    ingredients : list
     owner_id : int
     image_url : str = None
+    ingredients : list[FullIngredient] = []
     class Config:
         orm_mode = True
 
@@ -64,7 +68,7 @@ class  UpdateRecipeForm:
         category : Optional[int] = Form(None),
         time : Optional[int] = Form(None),
         level : Optional[int] = Form(None),
-        
+        is_favourite : Optional[bool] = Form(None)
     ): 
         self.name = name
         self.description = description
@@ -72,6 +76,7 @@ class  UpdateRecipeForm:
         self.category = category
         self.time = time
         self.level = level
+        self.is_favourite = is_favourite
 
     def get_recipe_base(self) -> RecipeBase:
         return UpdateRecipeData(**self.__dict__)

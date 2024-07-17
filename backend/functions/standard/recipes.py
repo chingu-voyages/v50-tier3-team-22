@@ -36,7 +36,7 @@ def add_recipe(data : RecipeBase, image : UploadFile | None, user : User, db_ses
     if len(re.findall(pattern="[^a-zA-z0-9 ]", string=data.name)):
        raise VALIDATION_ERROR
     if data.cuisine != None:
-        if len(data.cuisine) > 15 or len(re.findall(pattern="[^a-z]", string=data.cuisine)):
+        if len(data.cuisine) > 15 or len(re.findall(pattern="[^a-zA-Z]", string=data.cuisine)):
             raise VALIDATION_ERROR
     if data.time > 7200:
         raise VALIDATION_ERROR
@@ -75,6 +75,7 @@ def find_recipe(id : int, user : User,  db_session : Session):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Unauthorized to access this recipe"
         )
+
     image_url = None
     if recipe.image_name != None:
         image_url = get_image_url(recipe.image_name)
@@ -97,6 +98,22 @@ def update_recipe_content(id:int, image : UploadFile,  data : UpdateRecipeData, 
             raise VALIDATION_ERROR
         if len(re.findall(pattern="[^a-zA-z0-9 ]", string=data.name)):
             raise VALIDATION_ERROR
+    
+    if data.cuisine != None:
+        if len(data.cuisine) > 15 or len(re.findall(pattern="[^a-zA-Z]", string=data.cuisine)):
+            raise VALIDATION_ERROR
+        
+    if data.time != None:
+        if data.time > 7200:
+            raise VALIDATION_ERROR
+        
+    if data.level != None:
+        if data.level not in RECIPE_OPTIONS["level"].keys():
+            raise VALIDATION_ERROR
+    
+    if data.category != None:
+        if data.category not in RECIPE_OPTIONS["category"].keys():
+            raise VALIDATION_ERROR
     #Validate data
     recipe = get_recipe_by_id(db=db_session, id = id)
     
@@ -112,8 +129,11 @@ def update_recipe_content(id:int, image : UploadFile,  data : UpdateRecipeData, 
         )
 
     #Check ownership
+    image_url = None
     if image != None:
         _, image_url = image_upload(image=image, image_name=recipe.image_name)
+    if recipe.image_name != None:
+        image_url = get_image_url(recipe.image_name)
 
     if len(data_to_update) > 0:
         update_recipe(db=db_session, id=id, data_to_update=data_to_update)
