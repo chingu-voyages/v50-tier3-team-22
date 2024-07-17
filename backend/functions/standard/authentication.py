@@ -14,6 +14,7 @@ from database.schemas.authentication import User, LoginUser, TokenReturn, Regist
 
 from functions.db.db_user import create_user, delete_user, get_user_by_email
 from functions.db.db_recipe import delete_recipes, get_recipes_by_user, update_recipe
+from functions.db.db_ingredients import delete_ingredients
 
 from functions.standard.image_manager import delete_image
 
@@ -167,6 +168,7 @@ def remove_user(db_session:Session, user:User, data:LoginUser):
     #Delete images
 
     delete_recipes(db=db_session, owner_id=user.id)
+    delete_ingredients(db=db_session, owner_id=user.id)
     delete_user(db=db_session,id=user.id)
     #remove user and recipes
     return

@@ -23,7 +23,7 @@ class CreateIngredientForm:
     def __init__(
         self,
         name : str = Form(),
-        type : str = Form(),
+        type : int = Form(),
         amount : int = Form(),
         unit : int = Form()
     ):
