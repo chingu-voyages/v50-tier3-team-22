@@ -13,9 +13,11 @@ def create_ingredient(db : Session, ingredient : AddIngredient) -> IngredientMod
 
 def delete_ingredient(db : Session, id : int):
     db.query(IngredientModell).filter(IngredientModell.id == id).delete()
+    db.commit()
 
 def delete_ingredients(db : Session, owner_id : int):
     db.query(IngredientModell).filter(IngredientModell.owner_id == owner_id).delete()
+    db.commit()
 
 def get_ingredient(db : Session, name : str, owner_id : int) -> IngredientModell | None:
     return db.query(IngredientModell).filter(IngredientModell.owner_id == owner_id).filter(IngredientModell.name == name).first()

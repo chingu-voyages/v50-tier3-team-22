@@ -1,13 +1,17 @@
-from fastapi import HTTPException, status, UploadFile
+from fastapi import HTTPException, status, UploadFile, Response
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import re
 
-from functions.standard.image_manager import image_upload, get_image_url, delete_image
+from io import BytesIO
+
+from functions.standard.image_manager import image_upload, get_image_url, delete_image, get_image
 
 from database.schemas.recipes import Recipe, RecipeBase, RecipeCreate, UpdateRecipeData
 from database.schemas.authentication import User
 
-from functions.db.db_recipe import create_recipe, get_recipe_by_id, update_recipe, delete_recipe
+from functions.db.db_recipe import create_recipe, get_recipe_by_id, update_recipe, delete_recipe, get_favourite_recipes_by_user, get_recipes_by_user
+from functions.db.db_ingredients import delete_ingredient
 
 VALIDATION_ERROR = HTTPException(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -88,6 +92,7 @@ def find_recipe(id : int, user : User,  db_session : Session):
 def update_recipe_content(id:int, image : UploadFile,  data : UpdateRecipeData, db_session : Session, user : User):
     data_to_update : dict = data.dict()
 
+    print(data_to_update)
     for key, value in data.dict().items():
         if value == None:
             data_to_update.pop(key)
@@ -149,6 +154,9 @@ def update_recipe_content(id:int, image : UploadFile,  data : UpdateRecipeData, 
 def remove_recipe(id : int, db_session : Session, user : User):
     recipe = get_recipe_by_id(db=db_session, id=id)
 
+    ingredient_ids = [ingredient["id"] for ingredient in recipe.ingredients]
+    #saving the ingredient ids so will be able to delete
+
     if recipe == None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -159,13 +167,60 @@ def remove_recipe(id : int, db_session : Session, user : User):
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Unautrhorized to delete or access this recipe"
         )
-    
+
     #Getting the recipe from db and handling unathorized access and not found
     if recipe.image_name != None:
         delete_image(recipe.image_name)
     #Deleting the image
 
     delete_recipe(id=id, db=db_session)
+    #delete recipe
 
-    #Deleting the recipe
+    recipes = get_recipes_by_user(db=db_session, owner_id=user.id)
+
+    present_ingredient_ids = []
+
+    for recipe in recipes:
+        if len(recipe.ingredients) > 1:
+            present_ingredient_ids.append(*[ingredient["id"] for ingredient in recipe.ingredients])
+        elif len(recipe.ingredients) == 1:
+            present_ingredient_ids.append(recipe.ingredients[0]["id"])
+
+    #Creating a list with all the ingredient ids present in recipes
+    for ingredient_id in ingredient_ids:
+        if ingredient_id not in present_ingredient_ids:
+            delete_ingredient(db=db_session, id=ingredient_id)
+    
+    #Removing the ingredient if this was the only recipe it was present in
     return
+
+def get_recipes(is_favourite : bool, db_session : Session, user : User):
+    if is_favourite:
+        return get_favourite_recipes_by_user(db=db_session, owner_id=user.id)
+    return get_recipes_by_user(db=db_session, owner_id=user.id)
+
+def retrieve_image(recipe_id : int, db_session : Session, user : User):
+    recipe = get_recipe_by_id(db=db_session, id=recipe_id)
+
+    if recipe == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Recipe with this id was not found"
+        )
+    elif recipe.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Unautrhorized to delete or access this recipe"
+        )
+
+    #Getting the recipe from db and handling unathorized access and not found
+    if recipe.image_name == None:
+        return Response(content="No image", status_code=status.HTTP_204_NO_CONTENT)
+    #responging in case no url
+
+    image = get_image(image_name=recipe.image_name)
+
+    #getting the image 
+    image_stream = BytesIO(image)
+    #returning the image url
+    return StreamingResponse(content=image_stream)

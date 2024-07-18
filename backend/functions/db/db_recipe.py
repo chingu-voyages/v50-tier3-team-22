@@ -27,3 +27,6 @@ def get_recipe_by_id(db : Session, id : int) -> RecipeModel | None:
     
 def get_recipes_by_user(db : Session, owner_id : int) -> list[RecipeModel]:
     return db.query(RecipeModel).filter(RecipeModel.owner_id == owner_id).all()
+
+def get_favourite_recipes_by_user(db : Session, owner_id : int) -> list[RecipeModel]:
+    return db.query(RecipeModel).filter(RecipeModel.owner_id == owner_id).filter(RecipeModel.is_favourite == True).all()

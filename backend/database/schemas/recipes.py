@@ -37,6 +37,7 @@ class UpdateRecipeData(BaseModel):
     category : int = None
     time : int = None
     level : int = None
+    is_favourite : bool = None
 
 class CreateRecipeForm:
     def __init__(

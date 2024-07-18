@@ -6,6 +6,8 @@ import cloudinary.api
 from fastapi import UploadFile, HTTPException, status
 from datetime import datetime, UTC, timedelta
 
+import requests 
+
 CLOUDINARY_URL = getenv("CLOUDINARY_URL")
 
 IMAGE_EXPIRATION_IN_MIN = 15
@@ -60,9 +62,29 @@ def get_image_url(image_name : str) -> str:
             expires_at=int(expiration_time.timestamp())
             )[0]
     except:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Image saving failed") 
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Getting image failed") 
     
     return image_url
+
+def get_image(image_name : str):
+    try:
+        expiration_time = datetime.now(UTC) + timedelta(minutes=IMAGE_EXPIRATION_IN_MIN)
+        image_url = cloudinary.utils.cloudinary_url(
+            image_name,
+            type='private',
+            sign_url=True,
+            expires_at=int(expiration_time.timestamp())
+            )[0]
+        
+        response = requests.get(url=image_url)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Getting image failed with error {response.status_code}") 
+        return response.content
+    except:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Getting image failed") 
+    
+    
 
 def delete_image(image_name : str):
     try:

@@ -13,12 +13,16 @@ class Ingredient(AddIngredient):
     """Full ingredient in database"""
     id : int
     
-class FullIngredient(IngredientBase):
+    class Config:
+        orm_mode = True
+
+class CreateIngredient(IngredientBase):
     """Ingredient to add to recipe"""
     amount : int
     unit : int
 
-
+class FullIngredient(CreateIngredient):
+    id : int
 class CreateIngredientForm:
     def __init__(
         self,
@@ -32,5 +36,5 @@ class CreateIngredientForm:
         self.amount = amount
         self.unit = unit
 
-    def get_recipe_schema(self) -> FullIngredient:
-        return FullIngredient(**self.__dict__)
+    def get_recipe_schema(self) -> CreateIngredient:
+        return CreateIngredient(**self.__dict__)
