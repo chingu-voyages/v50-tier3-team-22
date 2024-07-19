@@ -1,5 +1,4 @@
 from fastapi import Form
-from typing import Optional
 
 class OAuth2CustomPasswordRequestForm:
     def __init__(

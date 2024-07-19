@@ -3,16 +3,19 @@ from fastapi.security.api_key import APIKeyHeader
 from sqlalchemy.orm import Session
 from database.database_services import get_db
 
+import re
 import jwt
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, UTC
 from os import getenv
 from bcrypt import gensalt
 from passlib.context import CryptContext
-from database.schemas.authentication import User, LoginUser, TokenReturn, RegisterUser
-from database.models.user import User as DbUser
+from database.schemas.authentication import User, LoginUser, TokenReturn, RegisterUser, CreateUser
 
 from functions.db.db_user import create_user, delete_user, get_user_by_email
+from functions.db.db_recipe import delete_recipes, get_recipes_by_user, update_recipe
+
+from functions.standard.image_manager import delete_image
 
 CREDENTIAL_EXEPTION = HTTPException(status_code=401, detail="Could not validate the credential")
 INCORRECT_LOGIN_EXEPTION = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password",headers={"WWW-Authenticate": "Bearer"},)
@@ -28,9 +31,17 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 #Token and verification functions
 def verify_password(password:str, salt:str, hashed_password:str):
     return pwd_context.verify(password + salt, hashed_password)
+    
 
 def login_for_access(db_session:Session, data:LoginUser):
+    if re.fullmatch(pattern="[a-z0-9/.]+@[a-z0-9/]+\.[a-z]+", string=data.email) == None:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email address")
+    
+    if len(data.password) < 6:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
+    #validate input
     user = get_user_by_email(db=db_session, email=data.email)
+    
     if user == None:
         raise INCORRECT_LOGIN_EXEPTION
     #check if user exists and retrieve user
@@ -67,7 +78,8 @@ def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         expires : datetime = datetime.fromisoformat(payload.get("expires"))
-        email : str = payload.get("sub")
+        email : str | None = payload.get("sub")
+
     except InvalidTokenError:
         raise credentials_exception
     #verify token 
@@ -80,54 +92,63 @@ def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(
     elif datetime.now(UTC) > expires:
         raise credentials_exception
     #check if sub info is valid and if expired
-    user_out = User(
-        id=user.id,
-        name=user.name,
-        email=user.email
-    )
+
+    user_out = user.dict()
+    user_out["recipes"] = user.recipes
 
     #return the user
-    return user_out
+    return User(**user_out)
 
 
 #User functions
 def make_new_user(data:RegisterUser, db_session : Session):
-    user = DbUser(
-        name = data.name,
-        email = data.email
-    )
+    if re.fullmatch(pattern="[a-z0-9/.]+@[a-z0-9/]+\.[a-z]+", string=data.email) == None:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email address")
     
+    if len(re.findall(pattern="[^a-zA-z ]", string=data.name)) > 0 or len(data.name) < 4:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid name provided please do not use special characters")
+    
+    if len(data.password) < 6:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
 
     #Validate the user input to make sure the data is correct
     
-    if get_user_by_email(db=db_session, email=user.email):
+
+    if get_user_by_email(db=db_session, email=data.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, 
             detail = "This email is already used"
         )
 
     #Checking the data base for conflicts
-
-    user.salt = str(gensalt())
-    user.password = pwd_context.hash(data.password + user.salt)
+    salt = str(gensalt())
+    hashed_password = pwd_context.hash(data.password + salt)
+    user = CreateUser(
+        name = data.name,
+        email = data.email,
+        salt = salt,
+        password = hashed_password
+    )
+   
 
     #Generating salt and hashing pw
     
-    user = create_user(db=db_session,user=user)
-    
+    user = create_user(db=db_session, user=user)
     #Adding the user to the database
 
-    user_out = User(
-        id=user.id,
-        name=user.name,
-        email=user.email
-    )
+    user_out = User(recipes=[], **user.dict())
   
     #Formulate response
     return user_out
 
 def remove_user(db_session:Session, user:User, data:LoginUser):
-    
+    if re.fullmatch(pattern="[a-z0-9/.]+@[a-z0-9/]+\.[a-z]+", string=data.email) == None:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email address")
+
+    if len(data.password) < 6:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Password is too short")
+
+
     #Validate login data
 
     user = get_user_by_email(db=db_session, email=data.email)
@@ -137,8 +158,16 @@ def remove_user(db_session:Session, user:User, data:LoginUser):
     elif not verify_password(data.password, user.salt, user.password):
         raise INCORRECT_LOGIN_EXEPTION
     #Double authenticate
+    
+    recipes = get_recipes_by_user(db=db_session, owner_id=user.id)
+    for recipe in recipes:
+        if recipe.image_name != None:
+            delete_image(recipe.image_name)
+            update_recipe(db=db_session, id=recipe.id, data_to_update={"image_name" : None})
+    #Delete images
 
+    delete_recipes(db=db_session, owner_id=user.id)
     delete_user(db=db_session,id=user.id)
-    #remove user
+    #remove user and recipes
     return
     #return

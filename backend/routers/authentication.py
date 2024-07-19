@@ -17,6 +17,10 @@ async def create_auth_token(db : Session = Depends(get_db), form_data : OAuth2Cu
 async def register_user(data:RegisterUser, db:Session = Depends(get_db)):
     return make_new_user(data=data, db_session=db)
 
+@router.get("/me", response_model=User, tags=["Auth"], status_code=status.HTTP_200_OK)
+async def get_user(user:User=Depends(authenticate)):
+    return user
+
 @router.delete("/deleteuser", response_model=None, tags=["Auth"],status_code=status.HTTP_202_ACCEPTED)
 async def delete_user(data:LoginUser, user:User=Depends(authenticate), db:Session=Depends(get_db)):
     remove_user(db_session=db, data=data, user=user)

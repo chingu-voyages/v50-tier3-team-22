@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from database.schemas.recipes import Recipe
 class UserBase(BaseModel):
     """Class with the basic info needed for all user shemas"""
     name : str
@@ -8,6 +9,7 @@ class UserBase(BaseModel):
 class User(UserBase):
     """Basic user model sterilized of secrets"""
     id : int
+    recipes : list[Recipe]
 
 class LoginUser(BaseModel):
     """User model for login"""

@@ -1,6 +1,10 @@
 
 from database.database import engine, SessionLocal, Base
 
+from database.models.user import User
+from database.models.recipe import Recipe
+#import order to keep relationship in database
+
 def start_database():
     Base.metadata.create_all(bind=engine)
 
