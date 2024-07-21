@@ -215,12 +215,11 @@ def retrieve_image(recipe_id : int, db_session : Session, user : User):
 
     #Getting the recipe from db and handling unathorized access and not found
     if recipe.image_name == None:
-        return Response(content="No image", status_code=status.HTTP_204_NO_CONTENT)
-    #responging in case no url
+        return {"No image for this recipe"}
 
     image = get_image(image_name=recipe.image_name)
 
     #getting the image 
     image_stream = BytesIO(image)
     #returning the image url
-    return StreamingResponse(content=image_stream)
+    return StreamingResponse(content=image_stream, media_type="image/jpeg")
