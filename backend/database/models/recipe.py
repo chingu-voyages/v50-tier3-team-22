@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship
 
 from database.database import Base
@@ -13,6 +13,8 @@ class Recipe(Base):
     category = Column(Integer)
     time = Column(Integer)
     level = Column(Integer)
+    is_favourite = Column(Boolean, default=False)
+    ingredients = Column(JSON, default=[])
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="recipes")
