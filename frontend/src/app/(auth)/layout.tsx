@@ -1,11 +1,3 @@
-import Link from "next/link";
-import {
-  HomeIcon,
-  ReaderIcon,
-  BookmarkIcon,
-  ClipboardIcon,
-  CalendarIcon,
-} from "@radix-ui/react-icons";
 import SideNavbar from "@/components/Layout/navbbar/SideNavbar";
 
 export default function RootLayout({
