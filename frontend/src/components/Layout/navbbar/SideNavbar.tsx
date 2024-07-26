@@ -10,7 +10,7 @@ import React from "react";
 
 export default function SideNavbar() {
   return (
-    <nav className="flex flex-col items-start px-2 text-sm font-medium lg:px-4 gap-9 ">
+    <nav className="flex flex-col items-start px-2 text-sm font-medium gap-9 ">
       <Link
         href="#"
         className="flex items-center justify-start gap-2 h-10 w-full rounded-sm px-3 py-2  transition-all hover:bg-[#E4F0DB] hover:text-primary"
