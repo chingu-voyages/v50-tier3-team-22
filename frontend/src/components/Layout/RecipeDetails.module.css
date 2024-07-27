@@ -1,0 +1,121 @@
+.container {
+  display: flex;
+  padding: 1rem;
+}
+
+.info {
+  background-color: #f7f8fa;
+  width: 50%;
+}
+
+.info h2,
+.check__boxes h2 {
+  font-family: Poppins;
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 48px;
+  text-align: left;
+}
+
+.plan {
+  color: #3a5b22;
+  font-family: Poppins;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 1rem 0;
+  line-height: 30px;
+  text-align: left;
+}
+.meal__deets {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 30%;
+}
+
+.meal__deets span {
+  background-color: #e4f0db;
+  font-family: Poppins;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  padding: 0.3rem;
+}
+
+.info img {
+  border-bottom: 8px;
+  margin-top: 1rem;
+}
+
+.buttons {
+  display: flex;
+  margin-bottom: 1rem;
+  position: relative;
+  right: 1px;
+}
+
+.buttons button {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  color: #959595;
+  font-family: Poppins;
+  font-size: 14px;
+  font-weight: 500;
+  height: 2.2rem;
+  line-height: 21px;
+  padding: 0 0.2rem 0.2rem 0.2rem;
+}
+
+.buttons button img {
+  display: inline-block;
+  margin-right: 0.2rem;
+  margin-bottom: 1rem;
+}
+.buttons button:first-child {
+  border-width: 0 1px 0 0;
+  padding-right: 0.2rem;
+}
+.buttons button:last-child {
+  border-width: 0 0 0 1px;
+  padding-left: 0.2rem;
+}
+
+.recipe__note {
+  font-family: Poppins;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 25px;
+  text-align: left;
+}
+
+.check__boxes {
+  margin-top: 1rem;
+  padding: 1rem 0.5rem 0.5rem 3rem;
+  position: sticky;
+  height: max-content;
+  top: 0;
+}
+
+.check__boxes li {
+  font-family: Poppins;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 25px;
+  text-align: left;
+}
+
+.check__boxes li:not(:last-child) {
+  margin-bottom: 0.5rem;
+}
+
+.checkbox {
+  border: 1px solid black;
+  border-radius: 0.2rem;
+  cursor: pointer;
+  margin-right: 0.2rem;
+  width: 13px;
+  height: 13px;
+}
+
+.checkbox:checked {
+  accent-color: #385b22;
+}
