@@ -12,3 +12,4 @@ class User(Base):
     email = Column(String, unique=True)
     recipes = relationship("Recipe", back_populates="owner")
     ingredients = relationship("Ingredient", back_populates="owner")
+    menus = relationship("Menu", back_populates="owner")
