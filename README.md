@@ -36,6 +36,7 @@ coding!
 
 - Jair Oliveira: [GitHub](https://github.com/ceifeirocv) / [LinkedIn](https://www.linkedin.com/in/jair-oliveira-77276b153/)
 - Donat Otvos #2: [GitHub](https://github.com/DonatOtvosDev)
+- Chukwuemeka Okezie: [GitHub](https://github.com/emmynando) / [LinkedIn](https://www.linkedin.com/in/chukwuemeka-okezie-2b1335177/)
 
   ...
 
