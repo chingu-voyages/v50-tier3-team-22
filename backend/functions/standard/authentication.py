@@ -15,6 +15,8 @@ from database.schemas.authentication import User, LoginUser, TokenReturn, Regist
 from functions.db.db_user import create_user, delete_user, get_user_by_email
 from functions.db.db_recipe import delete_recipes, get_recipes_by_user, update_recipe
 from functions.db.db_ingredients import delete_ingredients
+from functions.db.db_day import delete_days
+from functions.db.db_menu import delete_menus
 
 from functions.standard.image_manager import delete_image
 
@@ -96,6 +98,7 @@ def authenticate(db_session:Session = Depends(get_db), auth_key: str = Security(
 
     user_out = user.dict()
     user_out["recipes"] = user.recipes
+    user_out["menus"] = user.menus
 
     #return the user
     return User(**user_out)
@@ -137,7 +140,7 @@ def make_new_user(data:RegisterUser, db_session : Session):
     user = create_user(db=db_session, user=user)
     #Adding the user to the database
 
-    user_out = User(recipes=[], **user.dict())
+    user_out = User(recipes=[], menus=[],**user.dict())
   
     #Formulate response
     return user_out
@@ -169,7 +172,10 @@ def remove_user(db_session:Session, user:User, data:LoginUser):
 
     delete_recipes(db=db_session, owner_id=user.id)
     delete_ingredients(db=db_session, owner_id=user.id)
+    for menu in user.menus:
+        delete_days(db=db_session, menu_id=menu.id)
+    delete_menus(db=db_session, owner_id=user.id)
     delete_user(db=db_session,id=user.id)
-    #remove user and recipes
+    #remove user, recipes, ingredients, menus, and days
     return
     #return

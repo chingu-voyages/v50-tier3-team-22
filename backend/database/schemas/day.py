@@ -1,15 +1,21 @@
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import date
 
 from database.schemas.recipes import Recipe
-
-class CreateDay(BaseModel):
+class DayBase(BaseModel):
     """Required inforamtion to create a day"""
-    date : datetime
-    
+    date : date
+
+class CreateDay(DayBase):
+    name : str
+    menu_id : int
 class Day(CreateDay):
     """"Full day modell"""
     id : int
-    name : str
     meal_plan : dict[str, list[Recipe]]
-    menu_id : int
+    class Config:
+        orm_mode = True
+
+class DB_Day(CreateDay):
+    id : int
+    meal_plan : dict[str, list[int]]

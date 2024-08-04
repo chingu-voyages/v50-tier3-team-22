@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 
 from database.database import Base
@@ -7,7 +7,7 @@ class Day(Base):
     __tablename__  = "days"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
-    date = Column(DateTime)
+    date = Column(Date)
     meal_plan = Column(JSON, default={
         "breakfast" : [],  
         "lunch" : [],
@@ -15,4 +15,4 @@ class Day(Base):
         "snacks" : []
     })
     menu_id = Column(Integer, ForeignKey("menus.id"))
-    menu = relationship("Day", back_populates="days")
+    menu = relationship("Menu", back_populates="days")

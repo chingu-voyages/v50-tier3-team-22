@@ -1,10 +1,12 @@
 from sqlalchemy.orm import Session
+from datetime import date
 
 from database.models.menu import Menu as MenuModell
 
 from database.schemas.menu import CreateMenu
 
 def create_menu(db : Session, menu : CreateMenu) -> MenuModell:
+    
     db_menu = MenuModell(**menu.dict())
     db.add(db_menu)
     db.commit()
@@ -25,3 +27,6 @@ def delete_menus(db : Session, owner_id : int):
 
 def get_menu_by_id(db : Session, id : int) -> MenuModell | None:
     return db.query(MenuModell).filter(MenuModell.id == id).first()
+
+def get_menu_by_start_date(db : Session, date : date, owner_id : int) -> MenuModell | None:
+    return db.query(MenuModell).filter(MenuModell.owner_id == owner_id).filter(MenuModell.start_date == date).first()

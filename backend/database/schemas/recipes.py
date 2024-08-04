@@ -3,6 +3,10 @@ from fastapi import Form
 from typing import Optional
 
 from database.schemas.ingredients import FullIngredient
+
+class RecipeId(BaseModel):
+    """"Schema for requesting recipe id in body"""
+    id : int
 class RecipeBase(BaseModel):
     """"The base for other schemas and needed info from the user for creation"""
     name : str
@@ -12,7 +16,6 @@ class RecipeBase(BaseModel):
     time : int
     level : int
     
-
 class RecipeCreate(RecipeBase):
     """Information needed to create a db modell"""
     image_name : str | None = None
