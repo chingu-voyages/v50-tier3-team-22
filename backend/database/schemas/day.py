@@ -19,3 +19,5 @@ class Day(CreateDay):
 class DB_Day(CreateDay):
     id : int
     meal_plan : dict[str, list[int]]
+    class Config:
+        orm_mode = True

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import date
 
-from database.schemas.ingredients import FullIngredient
+from database.schemas.day import DB_Day
 
 class CreateMenu(BaseModel):
     """The base modell for menus the info that the user provides"""
@@ -19,4 +19,4 @@ class Menu(CreateMenu):
 class FullMenu(CreateMenu):
     """"Full menu modell with all information to return to the user"""
     id : int
-    days : list
+    days : list[DB_Day]
