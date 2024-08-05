@@ -13,3 +13,4 @@ class User(Base):
     recipes = relationship("Recipe", back_populates="owner")
     ingredients = relationship("Ingredient", back_populates="owner")
     menus = relationship("Menu", back_populates="owner")
+    shopping_lists = relationship("ShoppingList", back_populates="owner")

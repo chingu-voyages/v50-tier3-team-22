@@ -1,17 +1,21 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime, UTC
 
 from database.schemas.authentication import User
 
 from functions.db.db_day import create_day, get_day_by_id, get_day_by_date, update_day, delete_day
-from functions.db.db_menu import create_menu, get_menu_by_start_date, update_menu, delete_menu
+from functions.db.db_menu import create_menu, get_menu_by_start_date, delete_menu, get_menu_by_id
 from functions.db.db_recipe import get_recipe_by_id
+from functions.db.db_shoppingls import get_shoppig_list_of_menu, create_shopping_list, get_shopping_list_by_id, delete_shopping_list
+from functions.db.db_item import create_item, update_item, get_item_by_id, delete_item, delete_items
 
 from database.schemas.day import CreateDay, DayBase, DB_Day
 from database.schemas.menu import CreateMenu, FullMenu
 from database.schemas.recipes import RecipeId, Recipe
 from database.schemas.ingredients import FullIngredient	
+from database.schemas.shoppingls import ShoppingListBase, ShoppingList
+from database.schemas.item import ItemBase, ItemUpdate
 
 VALIDATION_ERROR = HTTPException(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -170,28 +174,180 @@ def get_weekly_menu(date : date, db_session : Session, user : User):
     menu = FullMenu(**menu.dict(), days=menu.days)
     return menu
 
-'''
-shopping_list : dict = menu.ingredients
+def generate_shopping_list(menu_id : int, generate_new : bool, db_session : Session, user : User):
+    menu = get_menu_by_id(db=db_session, id=menu_id)
+    if menu == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Menu with this id was not found"
+        )
+    elif menu.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You cannot access this menu"
+        )
+    #authorizing the user to access this menu and validationg the id
+    shopping_lists = get_shoppig_list_of_menu(db=db_session,menu_id=menu_id)
+    #check if there is previous shopping list
+    if len(shopping_lists) > 0 and generate_new == False:
+        return shopping_lists
 
-    for ingredient in recipe.ingredients:
-        ingredient = FullIngredient(**ingredient, owner_id=user.id)
-        if str(ingredient.id) not in shopping_list.keys():
-            shopping_list[str(ingredient.id)] = {ingredient.unit : {
-                "amount" : ingredient.amount, 
-                "type" : ingredient.type, 
-                "name" : ingredient.name
-            }}
-        elif str(ingredient.unit) not in shopping_list[str(ingredient.id)].keys():
-            shopping_list[str(ingredient.id)][str(ingredient.unit)] =  {
-                "amount" : ingredient.amount, 
-                "type" : ingredient.type, 
-                "name" : ingredient.name
-            }
+    days : list[DB_Day] = menu.days
+
+    recipe_ids = []
+    for day in days:
+        for ids in day.meal_plan.values():
+            recipe_ids += ids
+    #fetching all the recipe ids in the menu
+    shopping_list = {}
+    previous_recipe_id = 0
+    for recipe_id in recipe_ids:
+        #looping through the recipe ids in the menu
+
+        if previous_recipe_id == recipe_id:
+            pass
+        #passing over if the previous recipe id is the same as it is already handeled
+
         else:
-            shopping_list[str(ingredient.id)][str(ingredient.unit)]["amount"] = shopping_list[str(ingredient.id)][str(ingredient.unit)]["amount"] + ingredient.amount
+            previous_recipe_id = recipe_id
+            recipe_ocurence = recipe_ids.count(recipe_id)
+            #used later to multiply how many times recipe ocures and add the amount
 
-    update_menu(db=db_session, id=menu.id, data_to_update={"ingredients" : shopping_list})
+            recipe = get_recipe_by_id(db=db_session, id=recipe_id)
+            #fetching recipe
 
-    #adding ingredients to the weekly menu
+            for ingredient in recipe.ingredients:
+                #looping throuhg the ingredients
+                ingredient = FullIngredient(**ingredient, owner_id=user.id)
+            
+                if (str(ingredient.id) not in shopping_list.keys()):
+                    #adding the ingredient id if its not yet present in the shopping list
+                    shopping_list[str(ingredient.id)] = {str(ingredient.unit) : {
+                        "amount" : ingredient.amount * recipe_ocurence, 
+                        "type" : ingredient.type, 
+                        "name" : ingredient.name
+                    }}
+                elif str(ingredient.unit) not in shopping_list[str(ingredient.id)].keys():
+                    #adding the new unit to the ingredient if it is not yet present in the shopping list
+                    shopping_list[str(ingredient.id)][str(ingredient.unit)] =  {
+                        "amount" : ingredient.amount * recipe_ocurence, 
+                        "type" : ingredient.type, 
+                        "name" : ingredient.name
+                    }
+                else:
+                    #adding the amount if it is already present with unit and id
+                    shopping_list[str(ingredient.id)][str(ingredient.unit)]["amount"] += ingredient.amount * recipe_ocurence
+    #generated shopping list as a dictionary
+    db_shopping_list = ShoppingListBase(menu_id=menu_id, created=datetime.now(UTC), owner_id=user.id)
+    db_shopping_list = create_shopping_list(db=db_session, shopping_list=db_shopping_list)
 
-'''
+    #generating shopping list to db
+    for ingredient_id in shopping_list:
+        for ingredient_unit in shopping_list[ingredient_id]:
+            item = ItemBase(**shopping_list[ingredient_id][ingredient_unit], unit=ingredient_unit, shopping_list_id=db_shopping_list.id)
+            create_item(db=db_session, item=item)
+
+    #filling creating shopping list items to database
+    shopping_list = get_shopping_list_by_id(db=db_session, id=db_shopping_list.id)
+    #retribing shopping list
+
+    return ShoppingList(**shopping_list.dict(), items=shopping_list.items)
+
+def get_shopping_list_from_db(id : int, db_session : Session, user : User):
+    shopping_list = get_shopping_list_by_id(db=db_session, id=id)
+
+    if shopping_list == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shopping list with this id was not found "
+        )
+    elif shopping_list.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authorized to access this shopping list"
+        )
+    #validate input
+
+    return ShoppingList(**shopping_list.dict(), items=shopping_list.items)
+    #return the shopping list
+
+
+def update_item_data(data : ItemUpdate, db_session : Session, user : User):
+    item = get_item_by_id(db=db_session, id=data.id)
+    if item == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item with this id was not found"
+        )
+    
+    shopping_list = get_shopping_list_by_id(db=db_session, id=item.shopping_list_id)
+    if shopping_list.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authorized to access this shopping list item"
+        )
+    #get the item to update and check access
+    data_to_update = {}
+
+    if data.amount != None:
+        data_to_update["amount"] = data.amount
+    
+    if data.name != None:
+        data_to_update["name"] = data.name
+
+    if data.unit != None:
+        data_to_update["unit"] = data.unit
+
+    if data.is_checked != None:
+        data_to_update["is_checked"] = data.is_checked
+    #create data to update
+
+    if len(data_to_update.keys()) == 0:
+        raise VALIDATION_ERROR
+
+    update_item(db=db_session, data_to_update=data_to_update, id=data.id)
+
+    shopping_list = get_shopping_list_by_id(db=db_session, id=shopping_list.id)
+
+    return ShoppingList(**shopping_list.dict(), items=shopping_list.items)
+    #update and return
+
+def delete_shoppinglist_item(id : int, db_session : Session, user : User):
+    item = get_item_by_id(db=db_session, id=id)
+    if item == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item with this id was not found"
+        )
+    
+    shopping_list = get_shopping_list_by_id(db=db_session, id=item.shopping_list_id)
+    if shopping_list.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authorized to access this shopping list item"
+        )
+    #get the item to update and check access
+
+    delete_item(db=db_session, id=id)
+    #delete shopping list item
+    return
+
+def delete_shopping_list_from_db(id : int, db_session : Session, user : User):
+    shopping_list = get_shopping_list_by_id(db=db_session, id=id)
+
+    if shopping_list == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shopping list with this id was not found "
+        )
+    elif shopping_list.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authorized to access this shopping list"
+        )
+    #validate and check
+
+    delete_items(db=db_session, shopping_list_id=id)
+    delete_shopping_list(db=db_session, id=id)
+
+    return
