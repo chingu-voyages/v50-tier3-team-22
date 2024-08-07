@@ -1,10 +1,8 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 import re
-import json
 
 from database.schemas.authentication import User
-from database.schemas.recipes import Recipe
 from database.schemas.ingredients import FullIngredient, CreateIngredient, AddIngredient
 
 from functions.db.db_ingredients import get_ingredients_by_user, get_ingredient_by_name, create_ingredient, delete_ingredient
