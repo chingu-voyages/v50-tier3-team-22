@@ -7,6 +7,7 @@ from database.database_services import start_database
 import routers.authentication as authentication
 import routers.recipes as recipes
 import routers.ingredients as ingredients
+import routers.menu as menu
 
 start_database()
 
@@ -33,6 +34,7 @@ app.add_middleware(
 app.include_router(authentication.router)
 app.include_router(recipes.router)
 app.include_router(ingredients.router)
+app.include_router(menu.router)
 
 
 @app.get("/")

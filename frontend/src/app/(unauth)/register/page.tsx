@@ -7,7 +7,7 @@ import Image from "next/image";
 export default function Register() {
   return (
     <main className="w-full h-full min-h-screen flex justify-between">
-      <div className="w-1/2 flex items-center justify-center">
+      <div className="w-1/2 flex items-center justify-center bg-white">
         <div className="flex flex-col justify-between gap-12 max-w-md p-5">
           <h2 className="text-[32px] leading-[48px] font-medium">
             Get Started Now
