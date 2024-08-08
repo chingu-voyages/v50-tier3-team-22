@@ -33,7 +33,7 @@ async def add_recipe_to_day(meal : str, recipe_id : RecipeId, day : DayBase, db 
 async def delete_recipe(meal : str, recipe_id : RecipeId, day : DayBase, db : Session = Depends(get_db), user : User = Depends(authenticate)):
     return delete_recipe_from_menu(meal=meal, recipe_id=recipe_id, date=day.date, db_session=db, user=user)
 
-@router.get("/menu/{menu_id}/shoppinglist", response_model=ShoppingList, tags=["Menu"], status_code=status.HTTP_200_OK)
+@router.get("/menu/{menu_id}/shoppinglist", response_model=list[ShoppingList], tags=["Menu"], status_code=status.HTTP_200_OK)
 async def shopping_list_for_menu(menu_id : int, generate_new : bool = False, db : Session = Depends(get_db), user : User = Depends(authenticate)):
     return generate_shopping_list(menu_id=menu_id, generate_new=generate_new, db_session=db, user=user)
 

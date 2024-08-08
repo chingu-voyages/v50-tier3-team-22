@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import timedelta, date, datetime, UTC
+import re
 
 from database.schemas.authentication import User
 
@@ -16,6 +17,8 @@ from database.schemas.recipes import RecipeId, Recipe
 from database.schemas.ingredients import FullIngredient	
 from database.schemas.shoppingls import ShoppingListBase, ShoppingList
 from database.schemas.item import ItemBase, ItemUpdate
+
+from functions.standard.ingredients import INGREDIENT_OPTIONS
 
 VALIDATION_ERROR = HTTPException(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -190,7 +193,8 @@ def generate_shopping_list(menu_id : int, generate_new : bool, db_session : Sess
     shopping_lists = get_shoppig_list_of_menu(db=db_session,menu_id=menu_id)
     #check if there is previous shopping list
     if len(shopping_lists) > 0 and generate_new == False:
-        return shopping_lists
+        
+        return [ShoppingList(**ls.dict(), items=ls.items) for ls in shopping_lists]
 
     days : list[DB_Day] = menu.days
 
@@ -251,7 +255,7 @@ def generate_shopping_list(menu_id : int, generate_new : bool, db_session : Sess
     shopping_list = get_shopping_list_by_id(db=db_session, id=db_shopping_list.id)
     #retribing shopping list
 
-    return ShoppingList(**shopping_list.dict(), items=shopping_list.items)
+    return [ShoppingList(**shopping_list.dict(), items=shopping_list.items)]
 
 def get_shopping_list_from_db(id : int, db_session : Session, user : User):
     shopping_list = get_shopping_list_by_id(db=db_session, id=id)
@@ -293,9 +297,13 @@ def update_item_data(data : ItemUpdate, db_session : Session, user : User):
         data_to_update["amount"] = data.amount
     
     if data.name != None:
+        if len(re.findall(pattern="[^a-zA-Z ]", string=data.name)):
+            raise VALIDATION_ERROR
         data_to_update["name"] = data.name
 
     if data.unit != None:
+        if data.unit not in INGREDIENT_OPTIONS[item.type]["options"].keys():
+            raise VALIDATION_ERROR
         data_to_update["unit"] = data.unit
 
     if data.is_checked != None:

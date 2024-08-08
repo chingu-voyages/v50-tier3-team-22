@@ -142,7 +142,7 @@ def make_new_user(data:RegisterUser, db_session : Session):
     user = create_user(db=db_session, user=user)
     #Adding the user to the database
 
-    user_out = User(recipes=[], menus=[],**user.dict())
+    user_out = User(recipes=[], menus=[], shopping_lists=[],**user.dict())
   
     #Formulate response
     return user_out
