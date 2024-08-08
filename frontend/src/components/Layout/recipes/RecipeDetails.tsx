@@ -1,7 +1,7 @@
 import Image from "next/image";
-import recipe from "../../../public/pictures/recipe.png";
-import deletez from "../../../public/svg/delete.svg";
-import edit from "../../../public/svg/edit.svg";
+import recipe from "../../../../public/pictures/recipe.png";
+import deletez from "../../../../public/svg/delete.svg";
+import edit from "../../../../public/svg/edit.svg";
 import styles from "./RecipeDetails.module.css";
 export default function RecipeDetails() {
   return (
