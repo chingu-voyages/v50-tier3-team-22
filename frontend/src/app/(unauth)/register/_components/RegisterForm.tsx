@@ -33,7 +33,10 @@ export default function RegisterForm() {
 
   const mutattion = useMutation({
     mutationFn: (data: UserRegisterType) => {
-      return fastApi.post("/register", data);
+      return fastApi.post(
+        "https://v50-tier3-team-22.onrender.com/register",
+        data
+      );
     },
   });
 
@@ -41,6 +44,7 @@ export default function RegisterForm() {
     try {
       const response = await mutattion.mutateAsync(data);
       if (response?.status === 201) {
+        console.log(response);
         router.push(`/login?email=${response?.data.email}`);
       } else form.setError("root", { message: "Something went wrong" });
     } catch (error) {
