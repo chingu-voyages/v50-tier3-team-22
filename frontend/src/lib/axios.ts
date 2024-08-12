@@ -6,4 +6,14 @@ let fastApi = axios.create({
   baseURL: apiUrl,
 });
 
+// create interceptor to add token
+fastApi.interceptors.request.use((config) => {
+  // const token = localStorage.getItem("token");
+  const token = "12345";
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export { fastApi };

@@ -5,6 +5,7 @@ import QueryProvider from "@/context/QueryProvider";
 
 import NavbarLayout from "@/components/ui/NavbarLayout";
 import Navbar from "@/components/ui/Navbar";
+import SideNavbar from "@/components/Layout/navbbar/SideNavbar";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -29,7 +30,10 @@ export default function RootLayout({
       <body className={poppins.className}>
         <QueryProvider>
           <main style={{ display: "flex" }}>
-            <NavbarLayout />
+            <div className="flex flex-col gap-16 w-1/6 px-4 py-14 bg-white min-w-48">
+              <h1 className="text-4xl font-medium">Logo</h1>
+              <SideNavbar />
+            </div>
             {children}
           </main>
         </QueryProvider>
