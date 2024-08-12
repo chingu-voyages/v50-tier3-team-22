@@ -1,12 +1,11 @@
+import { lazy } from "react";
+import MealPlan from "@/components/Layout/mealPlan/MealPlan";
 
-
-import LoginComp from "@/components/Layout/auth/LoginComp";
-
-
+const SignInPreview = lazy(() => import("../components/Layout/auth/LoginComp"));
 export default function Home() {
   return (
     <main>
-
+      <SignInPreview />
     </main>
   );
 }

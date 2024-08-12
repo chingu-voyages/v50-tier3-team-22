@@ -7,7 +7,6 @@ import Image from "next/image";
 import google from "../../../../public/svg/google.svg";
 import facebook from "../../../../public/svg/facebook.svg";
 import apple from "../../../../public/svg/apple.svg";
-import heroImg from "../../../../public/svg/login_image.svg";
 import styles from "./LoginComp.module.css";
 
 interface FormType {
@@ -20,6 +19,7 @@ export default function LoginComp() {
     email: "",
     password: "",
   });
+  const [loadingState, setLoadingState] = useState(true);
 
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
@@ -42,30 +42,22 @@ export default function LoginComp() {
           email,
           password,
         };
+        setLoadingState(false);
         const data = await axios.post(
           "https://v50-tier3-team-22.onrender.com/token",
           userData,
           { headers: headers }
         );
-        // let {
-        //   data: { session },
-        //   error,
-        // } = await supabase.auth.signInWithPassword({
-        //   email: userCredentials.email.toLowerCase(),
-        //   password: userCredentials.password,
-        // });
-        // if (error) {
-        //   throw error;
-        // }
-        // if (session) {
-        //   router.replace("/");
-        // }
-        console.log(data);
+        setLoadingState(true);
+        if (data) router.push("/");
       }
     } catch (error: unknown) {
       console.error(error);
+      setLoadingState(true);
     }
+
     setUserCredentials({ ...userCredentials, password: "" });
+    setLoadingState(true);
   }
 
   return (
@@ -102,7 +94,9 @@ export default function LoginComp() {
               <p className={styles["check__box"]}>
                 <input type="checkbox" /> Remember for 30days
               </p>
-              <button type="submit">Login</button>
+              <button type="submit">
+                {loadingState ? "Login" : "loading"}
+              </button>
             </form>
           </div>
 
@@ -130,13 +124,11 @@ export default function LoginComp() {
           </div>
           <div className={styles["signup__text"]}>
             <p>Don't have an account?</p>
-            <Link href={""}>Sign up</Link>
+            <Link href={"/register"}>Sign up</Link>
           </div>
         </section>
         <div className={styles["image__box"]}>
-          <div>
-            {/* <Image src={heroImg} layout="responsive" alt="" />{" "} */}
-          </div>
+          <div></div>
         </div>
       </section>
     </div>
