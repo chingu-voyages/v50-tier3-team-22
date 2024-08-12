@@ -1,5 +1,3 @@
-"use client";
-
 import AddRecipeForm from "@/components/Layout/newRecipe/AddRecipeForm";
 import { fastApi } from "@/lib/axios";
 
