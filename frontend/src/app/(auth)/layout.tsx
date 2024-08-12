@@ -6,12 +6,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex h-full min-h-screen flex-row ">
-      <div className="flex flex-col gap-16 w-1/6 px-4 py-14 bg-white min-w-48">
-        <h1 className="text-4xl font-medium">Logo</h1>
-        <SideNavbar />
-      </div>
-      {children}
-    </div>
+    <div className="flex h-full min-h-screen flex-row w-full">{children}</div>
   );
 }
