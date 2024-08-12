@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { fastApi } from "@/lib/axios";
 import { AddRecipeSchema, AddRecipeType } from "@/lib/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { useForm } from "react-hook-form";
 
