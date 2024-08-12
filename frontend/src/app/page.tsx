@@ -5,7 +5,8 @@ const SignInPreview = lazy(() => import("../components/Layout/auth/LoginComp"));
 export default function Home() {
   return (
     <main>
-      <SignInPreview />
+      {/* <SignInPreview /> */}
+      <MealPlan />
     </main>
   );
 }

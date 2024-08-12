@@ -43,13 +43,21 @@ export default function LoginComp() {
           password,
         };
         setLoadingState(false);
-        const data = await axios.post(
+        const response = await axios.post(
           "https://v50-tier3-team-22.onrender.com/token",
           userData,
           { headers: headers }
         );
         setLoadingState(true);
-        if (data) router.push("/");
+        console.log(response);
+        // get access token
+        const { access_token } = response.data;
+
+        if (response) {
+          // Store token in local storage
+          localStorage.setItem("accessToken", access_token);
+          router.push("/");
+        }
       }
     } catch (error: unknown) {
       console.error(error);
