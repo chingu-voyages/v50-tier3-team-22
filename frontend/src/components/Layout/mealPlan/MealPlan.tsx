@@ -27,20 +27,20 @@ export default function MealPlan() {
     },
   });
 
-  // useEffect(() => {
-  const handlePageload = () => {
-    // Refetch the data manually on window reload
-    queryClient.invalidateQueries({ queryKey: ["fetchMealPlan"] });
-  };
+  useEffect(() => {
+    const handlePageload = () => {
+      // Refetch the data manually on window reload
+      queryClient.invalidateQueries({ queryKey: ["fetchMealPlan"] });
+    };
 
-  // Add event listener for window reload
-  window.addEventListener("load", handlePageload);
+    // Add event listener for window reload
+    window.addEventListener("load", handlePageload);
 
-  // Cleanup event listener on component unmount
-  return () => {
-    window.removeEventListener("load", handlePageload);
-  };
-  // }, [queryClient]);
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener("load", handlePageload);
+    };
+  }, [queryClient]);
 
   return (
     <main className={styles.container}>
